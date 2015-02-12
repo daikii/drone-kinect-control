@@ -49,6 +49,7 @@ class ofApp : public ofBaseApp{
         bool launchSet = false;
     
         bool hasPassed = false;
+        bool isQuit = false;
     
     private:
         ofxOscSender sender;

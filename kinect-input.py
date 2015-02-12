@@ -38,7 +38,7 @@ class ReceiveOSC:
         inp = Input(available[0][0])
 
         # add a function call that gets data sent via OSC
-        self.s.addMsgHandler("/mouse/position", inp.drive_handler)
+        self.s.addMsgHandler("/drone/position", inp.drive_handler)
 
         # check handlers added
         print "\nRegistered Callback-functions are :"
@@ -92,8 +92,9 @@ class Input:
 
         print "Connecting to %s" % link_uri
 
-        # thrust value continuously modified
+        # input values continuously modified
         self.thrust = 10000
+        self.roll = 0
 
     def _connected(self, link_uri):
         """ This callback is called form the Crazyflie API when a Crazyflie
@@ -119,22 +120,57 @@ class Input:
 
     # handler called by OSC server
     def drive_handler(self, addr, tags, stuff, source):
-        # increase thrust
-        if (stuff[0] == 1):
-            self.thrust += 500
+        if (stuff[0] == 9):
+            self.thrust = 0
+            self.roll = 0
             pitch = 0
-            roll = 0
             yawrate = 0
-            self._cf.commander.send_setpoint(roll, pitch, yawrate, self.thrust)
-            print self.thrust
+        else:
+            '''# decrease roll
+            if (stuff[0] == 1):
+                pitch = 0
+                self.roll += 1
+                yawrate = 0
+            # increase roll
+            elif (stuff[0] == 2):
+                pitch = 0
+                self.roll -= 1
+                yawrate = 0
+            # maintin current roll
+            else:
+                pitch = 0
+                yawrate = 0'''
 
-        # thrust reset
-        elif (stuff[0] == 2):
-            self.thrust = 10000
-            pitch = 0
-            roll = 0
-            yawrate = 0
-            self._cf.commander.send_setpoint(roll, pitch, yawrate, self.thrust)
+            # increase thrust
+            if (stuff[1] == 1):
+                self.thrust -= 200
+                pitch = 0
+                yawrate = 0
+            # decrease thrust
+            elif (stuff[1] == 2):
+                self.thrust -= 70
+                pitch = 0
+                yawrate = 0
+            # decrease thrust
+            elif (stuff[1] == 3):
+                self.thrust += 400
+                pitch = 0
+                yawrate = 0
+            # decrease thrust
+            elif (stuff[1] == 4):
+                self.thrust += 10
+                pitch = 0
+                yawrate = 0
+            # maintin current thrust
+            else:
+                pitch = 0
+                yawrate = 0
+
+            if (self.thrust > 50000):
+                self.thrust = 50000
+
+        # set input values
+        self._cf.commander.send_setpoint(self.roll, pitch, yawrate, self.thrust)
 
 #-------------------------------------------------------------------------
 

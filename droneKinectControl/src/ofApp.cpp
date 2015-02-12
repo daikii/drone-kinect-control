@@ -45,9 +45,6 @@ void ofApp::update(){
         // copy kinect pixels to rgb image
         colorImg.setFromPixels(kinect.getPixels(), kinectW, kinectH);
         
-        // mirror horizontally
-        colorImg.mirror(false, true);
-        
         // duplicate rgb
         hsbImg = colorImg;
         
@@ -87,7 +84,11 @@ void ofApp::update(){
         dist = initHvPt - trackPt;
         ofLog() << dist;
         
-        // add first argument - thrust
+        if(isQuit){
+            m.addIntArg(9);
+        }
+        
+        // add first argument - roll
         if(dist[0] > 50){
             m.addIntArg(1);
         }else if(dist[0] < -50){
@@ -96,13 +97,17 @@ void ofApp::update(){
             m.addIntArg(3);
         }
     
-        // add second argument - roll
-        if(dist[1] > 50){
+        // add second argument - thrust
+        if(dist[1] > 160){
             m.addIntArg(1);
-        }else if(dist[1] < -50){
+        }else if(dist[1] > 50){
             m.addIntArg(2);
-        }else{
+        }else if(dist[1] < -160){
             m.addIntArg(3);
+        }else if(dist[1] < -50){
+            m.addIntArg(4);
+        }else{
+            m.addIntArg(5);
         }
         
         // send via OSC
@@ -172,7 +177,11 @@ void ofApp::keyPressed(int key){
     // trigger drone flight
     if(destSet && trackSet && key == 's'){
         // set initial hover point
-        initHvPt = trackPt + ofVec2f(0, -100);
+        initHvPt = trackPt + ofVec2f(0, -180);
         launchSet = true;
+    }
+    
+    if(key == 'q'){
+        isQuit = true;
     }
 }
