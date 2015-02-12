@@ -38,9 +38,17 @@ class ofApp : public ofBaseApp{
         ofVec2f trackPt;
         ofVec2f dist;
     
+        ofVec2f initTrPt;
+        ofVec2f initHvPt;
+    
+        int thrust;
+        int roll;
+    
         bool trackSet = false;
         bool destSet = false;
         bool launchSet = false;
+    
+        bool hasPassed = false;
     
     private:
         ofxOscSender sender;

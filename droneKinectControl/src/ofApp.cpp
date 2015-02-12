@@ -84,14 +84,29 @@ void ofApp::update(){
         m.setAddress("/drone/position");
     
         // compute distance x,y from tracked pt to destination
-        dist = destPt - trackPt;
+        dist = initHvPt - trackPt;
         ofLog() << dist;
         
-        // add data arguments
-        m.addIntArg(1);
+        // add first argument - thrust
+        if(dist[0] > 50){
+            m.addIntArg(1);
+        }else if(dist[0] < -50){
+            m.addIntArg(2);
+        }else{
+            m.addIntArg(3);
+        }
     
+        // add second argument - roll
+        if(dist[1] > 50){
+            m.addIntArg(1);
+        }else if(dist[1] < -50){
+            m.addIntArg(2);
+        }else{
+            m.addIntArg(3);
+        }
+        
         // send via OSC
-        //sender.sendMessage(m);
+        sender.sendMessage(m);
     }
 }
 
@@ -124,6 +139,13 @@ void ofApp::draw(){
                      contours.blobs[i].boundingRect.width / 2);
         }
     }
+    
+    // mark the initial hover point. unmark once succeeded.
+    if(launchSet && !hasPassed){
+        ofSetColor(0, 0, 255);
+        ofFill();
+        ofCircle(initHvPt, 10);
+    }
 }
 
 //--------------------------------------------------------------
@@ -148,7 +170,9 @@ void ofApp::keyPressed(int key){
     }
     
     // trigger drone flight
-    if(key == 's'){
+    if(destSet && trackSet && key == 's'){
+        // set initial hover point
+        initHvPt = trackPt + ofVec2f(0, -100);
         launchSet = true;
     }
 }
