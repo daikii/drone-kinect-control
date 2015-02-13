@@ -47,9 +47,13 @@ class ofApp : public ofBaseApp{
         bool trackSet = false;
         bool destSet = false;
         bool launchSet = false;
+        bool quitSet = false;
     
         bool hasPassed = false;
-        bool isQuit = false;
+    
+        bool timerSet = false;
+        int initTimer;
+    
     
     private:
         ofxOscSender sender;

@@ -52,7 +52,10 @@ class ReceiveOSC:
 
         try :
             while 1 :
-                time.sleep(0)
+                # set slew to thrust
+                #if (inp.isOn):
+                 #   inp.slew();
+                time.sleep(0.5)
 
         except KeyboardInterrupt :
             # disconnect radio
@@ -92,9 +95,26 @@ class Input:
 
         print "Connecting to %s" % link_uri
 
-        # input values continuously modified
-        self.thrust = 10000
+        # input values
+        self.maxThrust = 65000
+        # below in percentage
+        self.maxThrustPer = 68
+        self.initThrustPer = 61
+        self.thrustPer = self.initThrustPer
+        self.rollPer = 0
+        self.pitchPer = 0
+        self.yawratePer = 0
+
+        self.thrust = 0
         self.roll = 0
+        self.pitch = 0
+        self.yawrate = 0
+
+        # slew rate in percentage
+        self.slewRate = 90
+
+        self.isOn = False
+        self.reset = False
 
     def _connected(self, link_uri):
         """ This callback is called form the Crazyflie API when a Crazyflie
@@ -118,59 +138,50 @@ class Input:
         """Callback when the Crazyflie is disconnected (called in all cases)"""
         print "Disconnected from %s" % link_uri
 
+    def slew(self):
+        self.thrust = self.maxThrust * (self.thrustPer - 5) / 100.0
+        #if (self.thrust < )
+        self._cf.commander.send_setpoint(self.roll, self.pitch, self.yawrate, self.thrust)
+        print self.thrust
+
     # handler called by OSC server
     def drive_handler(self, addr, tags, stuff, source):
+        # respond to force quit first
         if (stuff[0] == 9):
-            self.thrust = 0
-            self.roll = 0
-            pitch = 0
-            yawrate = 0
+            self.thrustPer = 0
+            self.rollPer = 0
+            self.pitchPer = 0
+            self.yawratePer = 0
+            self.reset = True
+            self.isOn = False
         else:
-            '''# decrease roll
-            if (stuff[0] == 1):
-                pitch = 0
-                self.roll += 1
-                yawrate = 0
-            # increase roll
-            elif (stuff[0] == 2):
-                pitch = 0
-                self.roll -= 1
-                yawrate = 0
-            # maintin current roll
-            else:
-                pitch = 0
-                yawrate = 0'''
+            self.isOn = True
+
+            # reset thrust value
+            if (self.reset == True):
+                self.thrustPer = self.initThrustPer
+                self.reset = False
 
             # increase thrust
             if (stuff[1] == 1):
-                self.thrust -= 200
-                pitch = 0
-                yawrate = 0
+                self.thrustPer += 0.1
             # decrease thrust
             elif (stuff[1] == 2):
-                self.thrust -= 70
-                pitch = 0
-                yawrate = 0
-            # decrease thrust
-            elif (stuff[1] == 3):
-                self.thrust += 400
-                pitch = 0
-                yawrate = 0
-            # decrease thrust
-            elif (stuff[1] == 4):
-                self.thrust += 10
-                pitch = 0
-                yawrate = 0
-            # maintin current thrust
-            else:
-                pitch = 0
-                yawrate = 0
+                self.thrustPer -= 1
 
-            if (self.thrust > 50000):
-                self.thrust = 50000
+            # limit max thrust value
+            if (self.thrustPer > self.maxThrustPer):
+                self.thrustPer = self.maxThrustPer
+
+        # convert to actual value
+        self.thrust = self.maxThrust * self.thrustPer / 100.0
+        self.roll = 0
+        self.pitch = 0
+        self.yawrate = 0
+        print self.thrust
 
         # set input values
-        self._cf.commander.send_setpoint(self.roll, pitch, yawrate, self.thrust)
+        self._cf.commander.send_setpoint(self.roll, self.pitch, self.yawrate, self.thrust)
 
 #-------------------------------------------------------------------------
 

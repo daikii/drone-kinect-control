@@ -73,7 +73,12 @@ void ofApp::update(){
     // OSC - POSITION UPDATE
     //---------------------------------
     
-    if(destSet && trackSet && launchSet){
+    // run this loop every XX seconds
+    if(!timerSet && launchSet){
+        // start timer
+        initTimer = ofGetElapsedTimeMillis();
+        timerSet = true;
+        
         // OSC prep
         ofxOscMessage m;
     
@@ -81,11 +86,14 @@ void ofApp::update(){
         m.setAddress("/drone/position");
     
         // compute distance x,y from tracked pt to destination
-        dist = initHvPt - trackPt;
+        dist = trackPt - initHvPt;
         ofLog() << dist;
         
-        if(isQuit){
+        // force quit
+        if(quitSet){
             m.addIntArg(9);
+            launchSet = false; // reset launch
+            quitSet = false;
         }
         
         // add first argument - roll
@@ -98,20 +106,21 @@ void ofApp::update(){
         }
     
         // add second argument - thrust
-        if(dist[1] > 160){
+        if(dist[1] > 90){
             m.addIntArg(1);
-        }else if(dist[1] > 50){
+        }else if(dist[1] < 0){
             m.addIntArg(2);
-        }else if(dist[1] < -160){
-            m.addIntArg(3);
-        }else if(dist[1] < -50){
-            m.addIntArg(4);
         }else{
-            m.addIntArg(5);
+            m.addIntArg(3);
         }
         
         // send via OSC
         sender.sendMessage(m);
+    }
+    
+    // timer check
+    if(timerSet && ofGetElapsedTimeMillis() - initTimer > 10){
+        timerSet = false;
     }
 }
 
@@ -177,11 +186,12 @@ void ofApp::keyPressed(int key){
     // trigger drone flight
     if(destSet && trackSet && key == 's'){
         // set initial hover point
-        initHvPt = trackPt + ofVec2f(0, -180);
+        initHvPt = trackPt + ofVec2f(0, -130);
         launchSet = true;
     }
     
+    // force quit
     if(key == 'q'){
-        isQuit = true;
+        quitSet = true;
     }
 }
