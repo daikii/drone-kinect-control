@@ -50,6 +50,7 @@ class ofApp : public ofBaseApp{
         bool quitSet = false;
     
         bool hasPassed = false;
+    bool hashasPassed = false;
     
         bool timerSet = false;
         int initTimer;

@@ -89,7 +89,7 @@ void ofApp::update(){
         dist = trackPt - initHvPt;
         ofLog() << dist;
         
-        // force quit
+        // add first argument - force quit
         if(quitSet){
             m.addIntArg(9);
             launchSet = false; // reset launch
@@ -105,12 +105,17 @@ void ofApp::update(){
             m.addIntArg(3);
         }
     
-        // add second argument - thrust
-        if(dist[1] > 90){
+        // add second argument - thrust for init hover point
+        if(!hasPassed && dist[1] > 40){
             m.addIntArg(1);
-        }else if(dist[1] < 0){
+        }else if(hasPassed && !hashasPassed){
+            // thrust at later hover point
             m.addIntArg(2);
+            hashasPassed = true;
+        }else if(hashasPassed){
+            m.addIntArg(4);
         }else{
+            hasPassed = true;
             m.addIntArg(3);
         }
         
@@ -119,7 +124,7 @@ void ofApp::update(){
     }
     
     // timer check
-    if(timerSet && ofGetElapsedTimeMillis() - initTimer > 10){
+    if(timerSet && ofGetElapsedTimeMillis() - initTimer > 400){
         timerSet = false;
     }
 }
@@ -155,7 +160,7 @@ void ofApp::draw(){
     }
     
     // mark the initial hover point. unmark once succeeded.
-    if(launchSet && !hasPassed){
+    if(launchSet){
         ofSetColor(0, 0, 255);
         ofFill();
         ofCircle(initHvPt, 10);
@@ -186,8 +191,13 @@ void ofApp::keyPressed(int key){
     // trigger drone flight
     if(destSet && trackSet && key == 's'){
         // set initial hover point
-        initHvPt = trackPt + ofVec2f(0, -130);
+        initHvPt = trackPt + ofVec2f(0, -50);
         launchSet = true;
+    }
+    
+    // change hover point
+    if (launchSet && key == 'u'){
+        initHvPt = ofVec2f(initHvPt[0], initHvPt[1] - 50);
     }
     
     // force quit

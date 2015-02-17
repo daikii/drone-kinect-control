@@ -54,8 +54,8 @@ class ReceiveOSC:
             while 1 :
                 # set slew to thrust
                 #if (inp.isOn):
-                 #   inp.slew();
-                time.sleep(0.5)
+                #   inp.slew();
+                time.sleep(0)
 
         except KeyboardInterrupt :
             # disconnect radio
@@ -84,6 +84,7 @@ class ReceiveOSC:
 class Input:
 
     def __init__(self, link_uri):
+        """ radio setup """
         self._cf = Crazyflie()
 
         self._cf.connected.add_callback(self._connected)
@@ -95,11 +96,12 @@ class Input:
 
         print "Connecting to %s" % link_uri
 
-        # input values
+        """ input values """
+        # maximum thrust
         self.maxThrust = 65000
         # below in percentage
-        self.maxThrustPer = 68
-        self.initThrustPer = 61
+        self.maxThrustPer = 72
+        self.initThrustPer = 40
         self.thrustPer = self.initThrustPer
         self.rollPer = 0
         self.pitchPer = 0
@@ -146,7 +148,7 @@ class Input:
 
     # handler called by OSC server
     def drive_handler(self, addr, tags, stuff, source):
-        # respond to force quit first
+        # respond to force quit argument
         if (stuff[0] == 9):
             self.thrustPer = 0
             self.rollPer = 0
@@ -162,12 +164,31 @@ class Input:
                 self.thrustPer = self.initThrustPer
                 self.reset = False
 
-            # increase thrust
             if (stuff[1] == 1):
-                self.thrustPer += 0.1
-            # decrease thrust
+                self.thrustPer += 1
+                self.initHoverThrustPer = self.thrustPer
+
+                if (self.thrustPer > self.maxThrustPer):
+                    self.thrustPer = self.maxThrustPer
+                
+                self.thrust = self.maxThrust * self.thrustPer / 100.0
+                self._cf.commander.send_setpoint(0, 0, 0, self.thrust)
             elif (stuff[1] == 2):
-                self.thrustPer -= 1
+                self.thrustPer = self.initHoverThrustPer + 3
+                self.thrust = self.maxThrust * self.thrustPer / 100.0
+                self._cf.commander.send_setpoint(0, 0, 0, self.thrust)
+                self._cf.param.set_value("flightmode.althold", "True")
+                print self.thrust
+            elif (stuff[1] == 4):
+                self._cf.commander.send_setpoint(0, 0, 0, self.thrust)
+                print "hi"
+'''
+            # control thrust
+            if (stuff[1] == 1):
+                self.thrustPer += 1
+                self.initHoverThrustPer = self.thrustPer
+            elif (stuff[1] == 2):
+                self.thrustPer = self.initHoverThrustPer + 2
 
             # limit max thrust value
             if (self.thrustPer > self.maxThrustPer):
@@ -178,11 +199,11 @@ class Input:
         self.roll = 0
         self.pitch = 0
         self.yawrate = 0
-        print self.thrust
+        print self.thrustPer
 
         # set input values
         self._cf.commander.send_setpoint(self.roll, self.pitch, self.yawrate, self.thrust)
-
+'''
 #-------------------------------------------------------------------------
 
 if __name__ == '__main__':
