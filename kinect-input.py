@@ -164,6 +164,7 @@ class Input:
                 self.thrustPer = self.initThrustPer
                 self.reset = False
 
+            # test hover mode
             if (stuff[1] == 1):
                 self.thrustPer += 1
                 self.initHoverThrustPer = self.thrustPer
@@ -174,14 +175,14 @@ class Input:
                 self.thrust = self.maxThrust * self.thrustPer / 100.0
                 self._cf.commander.send_setpoint(0, 0, 0, self.thrust)
             elif (stuff[1] == 2):
-                self.thrustPer = self.initHoverThrustPer + 3
+                self.thrustPer = self.initHoverThrustPer + 5
                 self.thrust = self.maxThrust * self.thrustPer / 100.0
                 self._cf.commander.send_setpoint(0, 0, 0, self.thrust)
                 self._cf.param.set_value("flightmode.althold", "True")
                 print self.thrust
             elif (stuff[1] == 4):
-                self._cf.commander.send_setpoint(0, 0, 0, self.thrust)
-                print "hi"
+                self._cf.commander.send_setpoint(0, 0, 0, 32767)
+                print "hover mode"
 '''
             # control thrust
             if (stuff[1] == 1):

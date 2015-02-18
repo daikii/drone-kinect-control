@@ -124,7 +124,7 @@ void ofApp::update(){
     }
     
     // timer check
-    if(timerSet && ofGetElapsedTimeMillis() - initTimer > 400){
+    if(timerSet && ofGetElapsedTimeMillis() - initTimer > 10){
         timerSet = false;
     }
 }
