@@ -19,7 +19,7 @@ void ofApp::setup(){
     ofBackground(0,0,0);
     
     ofSetVerticalSync(true);
-    ofSetFrameRate(60);
+    //ofSetFrameRate(60);
     //ofSetLogLevel(OF_LOG_VERBOSE);
     
     // clear all keys
@@ -107,19 +107,39 @@ void ofApp::update(){
         
         if(trackSet && destSet){
             // PI: compute error distance x,y from tracked pt to destination
-            error = (trackPt - destPt);
+            error = (destPt - trackPt);
             errorAcc += error;
             
-            // zone entrance check
+            // roll direction check
+            if(error[0] > 0){
+                dir = true;
+            }else{
+                dir = false;
+            }
+            
+            // save point-to-point distance
+            if(hasNewPt){
+                dist = error;
+                hasNewPt = false;
+                // scale zone range depending on the pt-pt distance
+                zoneW = ofMap(abs(dist[0]), 0, 300, zoneWmin, zoneWmax);
+                ofLog() << "NEW PT: " << dist[0] << " " << zoneW;
+            }
+            
             // enter hover mode once very close to destination
             if(abs(error[0]) < zoneFin){
-                error[0] = 0.07;
                 hoverSet = true;
             }
+            
+            // zone entrance check
             // apply brake toward opposite direction
-            else if(abs(error[0]) < zoneW){
-                error[0] = 0.07;
-                ofLog() << "ZONE";
+            if(abs(error[0]) < zoneW){
+                float temp = ofMap(abs(error[0]), zoneW, zoneFin, 0, brakeMax);
+                error[0] = zoneW * temp;
+                if(dir){
+                    error[0] *= -1;
+                }
+                ofLog() << "ZONE: " << temp;
             }
         
             // PI: compute correction amount for roll
@@ -127,7 +147,7 @@ void ofApp::update(){
             iCorrR = KiR * errorAcc[0];
             
             // update roll
-            drone.controller.rollAmount = -1 * pCorrR;
+            drone.controller.rollAmount = pCorrR;
             
             // zone entrance check
             // inside zone apply brake toward opposite direction
@@ -149,19 +169,7 @@ void ofApp::update(){
             ofLog() << "error: " << error[0] << ", roll: " << drone.controller.rollAmount;
 
             // backup manual control
-            float s = 0.02;
-    
-            //if(keys[OF_KEY_UP]) drone.controller.liftSpeed += s;
-            //else if(keys[OF_KEY_DOWN]) drone.controller.liftSpeed -= s;
-        
-            //if(keys['a']) drone.controller.rollAmount -= s;
-            //else if(keys['d']) drone.controller.rollAmount += s;
-        
-            if(keys['w']) drone.controller.pitchAmount -= s;
-            else if(keys['s']) drone.controller.pitchAmount += s;
-        
-            if(keys[OF_KEY_LEFT]) drone.controller.spinSpeed -= s;
-            else if(keys[OF_KEY_RIGHT]) drone.controller.spinSpeed += s;
+            manualCtrl();
         }
         
         // update the drone(process and send queued commands to drone,
@@ -172,11 +180,34 @@ void ofApp::update(){
     // hover mode, reset
     else{
         error.set(0, 0);
-        ofLog() << "!!!!!!!!HOVER MODE!!!!!!!!";
+        ofLog() << "!!!!!!!HOVER MODE!!!!!!!!";
     }
     
     // receive and send relevant osc commands to any other apps (OPTIONAL)
     droneOsc.update();
+}
+
+//--------------------------------------------------------------
+
+void ofApp::manualCtrl(){
+    
+    //---------------------------------
+    // BACKUP MANUAL CONTROL
+    //---------------------------------
+    
+    float s = 0.02;
+    
+    //if(keys[OF_KEY_UP]) drone.controller.liftSpeed += s;
+    //else if(keys[OF_KEY_DOWN]) drone.controller.liftSpeed -= s;
+    
+    //if(keys['a']) drone.controller.rollAmount -= s;
+    //else if(keys['d']) drone.controller.rollAmount += s;
+    
+    if(keys['w']) drone.controller.pitchAmount -= s;
+    else if(keys['s']) drone.controller.pitchAmount += s;
+    
+    if(keys[OF_KEY_LEFT]) drone.controller.spinSpeed -= s;
+    else if(keys[OF_KEY_RIGHT]) drone.controller.spinSpeed += s;
 }
 
 //--------------------------------------------------------------
@@ -193,6 +224,9 @@ void ofApp::draw(){
     string spec = "";
     spec = "battery level: "+ ofToString(state.getBatteryPercentage())+"%\n";
     ofDrawBitmapString(spec, 50, ofGetHeight() - 20);
+    
+    // fps on top-left
+    ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 50, ofGetHeight() - 50);
     
     // draw destination point
     if(destSet){
@@ -251,6 +285,7 @@ void ofApp::keyPressed(int key){
             //destPt.set(mouseX, mouseY);
             destPt.set(mouseX, mouseY);
             hoverSet = false;
+            hasNewPt = true;
             break;
     }
     
@@ -262,8 +297,7 @@ void ofApp::keyPressed(int key){
 
 void ofApp::keyReleased(int key){
     
-    keys[key] = false;
-    
+    // reset when released
     switch(key) {
         case OF_KEY_UP:
         case OF_KEY_DOWN:
@@ -285,6 +319,8 @@ void ofApp::keyReleased(int key){
             drone.controller.rollAmount = 0;
             break;
     }
+    
+    keys[key] = false;
 }
 
 //--------------------------------------------------------------

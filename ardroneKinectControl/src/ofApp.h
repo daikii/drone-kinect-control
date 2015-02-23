@@ -18,6 +18,8 @@ class ofApp : public ofBaseApp{
         void mouseDragged(int x, int y, int button);
         void mousePressed(int x, int y, int button);
     
+        void manualCtrl();
+    
         ofxARDrone::Drone drone;
         ofxARDrone::OscBridge droneOsc;
     
@@ -47,12 +49,17 @@ class ofApp : public ofBaseApp{
         ofVec2f error;
         ofVec2f errorAcc;
     
+        // maximum brake
+        float brakeMax = 1.5;
+    
         // zone lengths for making brakes
-        int zoneW = 30;
+        int zoneWmin = 30;
+        int zoneWmax = 90;
+        int zoneW = zoneWmin;
         int zoneH = 50;
     
         // end zone
-        int zoneFin = 10;
+        int zoneFin = 15;
     
         // PI correction amount for roll
         float pCorrR;
@@ -77,10 +84,15 @@ class ofApp : public ofBaseApp{
     
         int thrust;
         int roll;
+        bool dir;
     
         bool trackSet = false;
         bool destSet = false;
     
         // hover mode
         bool hoverSet = false;
+    
+        // for saving distance point-to-point
+        bool hasNewPt = false;
+        ofVec2f dist;
 };
