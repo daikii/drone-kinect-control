@@ -18,6 +18,9 @@ class ofApp : public ofBaseApp{
         void mouseDragged(int x, int y, int button);
         void mousePressed(int x, int y, int button);
     
+        void closenessCheck();
+    
+        void singleAxisCtrl();
         void manualCtrl();
     
         ofxARDrone::Drone drone;
@@ -49,15 +52,21 @@ class ofApp : public ofBaseApp{
         ofVec2f error;
         ofVec2f errorAcc;
     
+        // integrator minimum and maximum
+        float intMin = -50.0;
+        float intMax = 50.0;
+    
+        // destination reached identification
+        bool hasReached[2] = {false};
+    
         // maximum brake
-        float brakeMax = 1.5;
+        float brakeMax = 2.0;
     
         // zone lengths for making brakes
         int zoneWmin = 30;
         int zoneWmax = 90;
         int zoneW = zoneWmin;
-        int zoneH = 50;
-    
+        
         // end zone
         int zoneFin = 15;
     
@@ -66,8 +75,8 @@ class ofApp : public ofBaseApp{
         float iCorrR;
     
         // PI coefficients for roll (0.0002)
-        float KpR = 0.0002f;
-        float KiR = 0.00006f;
+        float KpR = 0.0005f;
+        float KiR = 0.004f;
     
         // PI correction amount for lift
         float pCorrL;
@@ -75,7 +84,7 @@ class ofApp : public ofBaseApp{
     
         // PI coefficients for lift
         float KpL = 0.0002f;
-        float KiL = 0.00001f;
+        float KiL = 0.0002f;
     
         // sampling rate
         int sampling = 200;
@@ -84,7 +93,7 @@ class ofApp : public ofBaseApp{
     
         int thrust;
         int roll;
-        bool dir;
+        bool dirX;
     
         bool trackSet = false;
         bool destSet = false;

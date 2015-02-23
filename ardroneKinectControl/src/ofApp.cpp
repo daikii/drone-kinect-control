@@ -106,40 +106,37 @@ void ofApp::update(){
     if(!hoverSet){
         
         if(trackSet && destSet){
-            // PI: compute error distance x,y from tracked pt to destination
-            error = (destPt - trackPt);
-            errorAcc += error;
-            
-            // roll direction check
-            if(error[0] > 0){
-                dir = true;
-            }else{
-                dir = false;
-            }
-            
-            // save point-to-point distance
+            // refresh when new dest selected
             if(hasNewPt){
-                dist = error;
-                hasNewPt = false;
-                // scale zone range depending on the pt-pt distance
-                zoneW = ofMap(abs(dist[0]), 0, 300, zoneWmin, zoneWmax);
-                ofLog() << "NEW PT: " << dist[0] << " " << zoneW;
-            }
-            
-            // enter hover mode once very close to destination
-            if(abs(error[0]) < zoneFin){
-                hoverSet = true;
-            }
-            
-            // zone entrance check
-            // apply brake toward opposite direction
-            if(abs(error[0]) < zoneW){
-                float temp = ofMap(abs(error[0]), zoneW, zoneFin, 0, brakeMax);
-                error[0] = zoneW * temp;
-                if(dir){
-                    error[0] *= -1;
+                for(int i = 0; i < 2; i++){
+                    hasReached[i] = false;
                 }
-                ofLog() << "ZONE: " << temp;
+                errorAcc.set(0, 0);
+                hasNewPt = false;
+            }
+            
+            // P: compute error distance x,y from tracked pt to destination
+            error = (destPt - trackPt);
+            
+            // check closeness to destination
+            if(abs(error[0]) < zoneFin){
+                hasReached[0] = true;
+            }
+            if(abs(error[1]) < zoneFin){
+                hasReached[1] = true;
+            }
+            
+            // integrator for roll
+            if(hasReached[0]){
+                errorAcc[0] += error[0];
+                // min and max check
+                if(errorAcc[0] < intMin){
+                    errorAcc[0] = intMin;
+                }
+                if(errorAcc[0] > intMax){
+                    errorAcc[0] = intMax;
+                }
+                //ofLog() << "Integrator: " << errorAcc[0];
             }
         
             // PI: compute correction amount for roll
@@ -149,25 +146,28 @@ void ofApp::update(){
             // update roll
             drone.controller.rollAmount = pCorrR;
             
-            // zone entrance check
-            // inside zone apply brake toward opposite direction
-            if(abs(error[1]) < zoneH){
-                error[1] *= -1.5;
+            // integrator for lift
+            if(hasReached[1]){
+                errorAcc[1] += error[1];
+                // min and max check
+                if(errorAcc[1] < intMin){
+                    errorAcc[1] = intMin;
+                }
+                if(errorAcc[1] > intMax){
+                    errorAcc[1] = intMax;
+                }
+                ofLog() << "Integrator: " << errorAcc[1];
             }
             
             // PI: compute correction amount for lift
             pCorrL = KpL * error[1];
             iCorrL = KiL * errorAcc[1];
             
-            // update altitude
-            //drone.controller.liftSpeed = pCorrL;
+            // update lift
+            drone.controller.liftSpeed = -1 * (pCorrL + iCorrL);
             
-            //if(abs(error[0]) < zoneW && abs(error[1]) < zoneH){
-                //hoverSet = true;
-            //}
-            
-            ofLog() << "error: " << error[0] << ", roll: " << drone.controller.rollAmount;
-
+            ofLog() << "error: " << error[1] << ", roll: " << drone.controller.rollAmount;
+        
             // backup manual control
             manualCtrl();
         }
@@ -185,6 +185,61 @@ void ofApp::update(){
     
     // receive and send relevant osc commands to any other apps (OPTIONAL)
     droneOsc.update();
+}
+
+//--------------------------------------------------------------
+
+void ofApp::closenessCheck(){
+    
+    
+}
+
+//--------------------------------------------------------------
+
+void ofApp::singleAxisCtrl(){
+    
+    // PI: compute error distance x,y from tracked pt to destination
+    error = (destPt - trackPt);
+    errorAcc += error;
+    
+    // roll direction check
+    if(error[0] > 0){
+        dirX = true;
+    }else{
+        dirX = false;
+    }
+    
+    // save point-to-point distance
+    if(hasNewPt){
+        dist = error;
+        hasNewPt = false;
+        // scale zone range depending on the pt-pt distance
+        zoneW = ofMap(abs(dist[0]), 0, 300, zoneWmin, zoneWmax);
+        ofLog() << "NEW PT: " << dist[0] << " " << zoneW;
+    }
+    
+    // enter hover mode once very close to destination
+    if(abs(error[0]) < zoneFin){
+        hoverSet = true;
+    }
+    
+    // zone entrance check
+    // apply brake toward opposite direction
+    if(abs(error[0]) < zoneW){
+        float temp = ofMap(abs(error[0]), zoneW, zoneFin, 0, brakeMax);
+        error[0] = zoneW * temp;
+        if(dirX){
+            error[0] *= -1;
+        }
+        ofLog() << "ZONE: " << temp;
+    }
+    
+    // PI: compute correction amount for roll
+    pCorrR = KpR * error[0];
+    iCorrR = KiR * errorAcc[0];
+    
+    // update roll
+    drone.controller.rollAmount = pCorrR;
 }
 
 //--------------------------------------------------------------
