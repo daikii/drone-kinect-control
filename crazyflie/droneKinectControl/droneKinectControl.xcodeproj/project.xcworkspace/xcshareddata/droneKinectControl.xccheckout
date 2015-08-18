@@ -14,11 +14,11 @@
 		<string>https://github.com/daikii/drone-kinect-control.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>droneKinectControl/droneKinectControl.xcodeproj</string>
+	<string>crazyflie/droneKinectControl/droneKinectControl.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
 		<key>A58B815D920C51F008A25C991BF519B8F263FFE2</key>
-		<string>../../..</string>
+		<string>../../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>https://github.com/daikii/drone-kinect-control.git</string>
